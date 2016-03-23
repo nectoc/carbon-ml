@@ -71,7 +71,7 @@
                                     <a href="../data/datasets.jag" class="no-deco">
                                         <h3 class="ico-datasets">Datasets</h3>
                                         <div class="content">
-                                            <p>Dataset is a collection of data organized according to a defined schema in an CSV or TSV format. Datasets can be uploaded from file system, HDFS or WSO2 DAS.</p>
+                                            <p>Dataset is a collection of data organized according to a defined schema in CSV or TSV format. Datasets can be uploaded from file system, HDFS or WSO2 DAS.</p>
                                         </div>
                                     </a>
                                     <div class="bg-summary-actions">
