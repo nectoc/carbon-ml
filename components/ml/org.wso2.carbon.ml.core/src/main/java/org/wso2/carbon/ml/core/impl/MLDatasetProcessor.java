@@ -17,9 +17,7 @@
  */
 package org.wso2.carbon.ml.core.impl;
 
-import java.io.InputStream;
-import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,6 +37,12 @@ import org.wso2.carbon.ml.core.utils.MLUtils;
 import org.wso2.carbon.ml.core.utils.MLUtils.DataTypeFactory;
 import org.wso2.carbon.ml.database.DatabaseService;
 import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This object is responsible for reading a data-set using a {@link MLInputAdapter}, extracting meta-data, persist in ML
@@ -95,6 +99,8 @@ public class MLDatasetProcessor {
 
     public List<MLDataset> getAllDatasets(int tenantId, String userName) throws MLDataProcessingException {
         try {
+            //MemoryModelHandler handler = new MemoryModelHandler();
+            //handler.loadLists(new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" ));
             return databaseService.getAllDatasets(tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
@@ -191,6 +197,7 @@ public class MLDatasetProcessor {
 
         List<String> featureNames = retreiveFeatureNames(datasetSchemaId);
 
+
         // If size is zero, then it is the first version of the dataset
         if (featureNames.size() != 0) {
             // Validate number of features
@@ -219,10 +226,14 @@ public class MLDatasetProcessor {
             log.debug("datasetSchemaId: " + datasetSchemaId);
         }
         String versionsetName = dataset.getName() + "-" + dataset.getVersion();
+        createDatasetArtifact(dataset);
 
         // build the MLDatasetVersion
         MLDatasetVersion datasetVersion = MLUtils.getMLDatsetVersion(dataset.getTenantId(), datasetSchemaId,
                 dataset.getUserName(), versionsetName, dataset.getVersion(), targetPath);
+
+        //createArtifact(dataset, datasetVersion);
+        createVersionArtifact(datasetVersion,dataset.getName());
 
         long datasetVersionId = retrieveDatasetVersionId(datasetVersion);
         if (datasetVersionId != -1) {
@@ -327,4 +338,109 @@ public class MLDatasetProcessor {
         }
     }
 
+    /*public void createArtifact(MLDataset dataset, MLDatasetVersion version) {
+
+        JSONObject obj = new JSONObject();
+        MemoryModelHandler handler = new MemoryModelHandler();
+        List<MLDataset> datasets = handler.insertDatasets(dataset, version);
+
+        for (MLDataset set : datasets) {
+            if (set.getId() == dataset.getId()) {
+                obj.put(dataset.getId(), set.getVersions().get(set.getVersions().size() - 1));
+            }
+        }
+
+        try {
+            File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
+            if (!dir.exists()) {
+                if (dir.mkdir()) {
+                    System.out.println("Directory is created!");
+                } else {
+                    System.out.println("Failed to create directory!");
+                }
+            }
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + version.getVersion() + ".json");
+
+            if (!file.exists()) {
+                file.createNewFile();
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write(obj.toJSONString());
+                fileWriter.flush();
+                fileWriter.close();
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }*/
+
+    public void createDatasetArtifact(MLDataset dataset){
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLDataset> datasets = model.addDatasets(dataset);
+        ObjectMapper mapper = new ObjectMapper();
+        MLDataset set = datasets.get(datasets.size()-1);
+
+        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+        try {
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + ".json");
+            if(!file.exists()) {
+                mapper.writeValue(new File(
+                        System.getProperty("carbon.home") + File.separator + "repository" +
+                        File.separator + "deployment" + File.separator + "server" + File.separator +
+                        "datasets" + File.separator + dataset.getName() + ".json"), set);
+                String jsonInString = mapper.writeValueAsString(set);
+                System.out.println(jsonInString);
+
+                // Convert object to JSON string and print
+                jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(set);
+                System.out.println(jsonInString);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void createVersionArtifact(MLDatasetVersion version,String datasetName){
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLDataset> datasets = model.addVersions(version);
+        ObjectMapper mapper = new ObjectMapper();
+        List<MLDatasetVersion>versions = new ArrayList<>();
+        MLDatasetVersion versionList = new MLDatasetVersion();
+
+        for(int i=0; i<datasets.size(); i++){
+            if(datasets.get(i).getId() == version.getDatasetId()){
+                versions = datasets.get(i).getVersions();
+                versionList = versions.get(versions.size()-1);
+            }
+        }
+//        int id = (int) version.getDatasetId();
+//        versionList= datasets.get(id).getVersions().get(datasets.get(id).getVersions().size()-1);
+
+        try {
+            mapper.writeValue( new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator +datasetName + File.separator + version.getVersion() + ".json"), versionList);
+            String jsonInString = mapper.writeValueAsString(versionList);
+            System.out.println(jsonInString);
+
+            // Convert object to JSON string and print
+            jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(versionList);
+            System.out.println(jsonInString);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+       }
 }

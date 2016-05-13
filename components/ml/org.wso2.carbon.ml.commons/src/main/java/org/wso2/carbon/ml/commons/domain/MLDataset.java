@@ -17,6 +17,9 @@
  */
 package org.wso2.carbon.ml.commons.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represent a Data-set in ML.
  */
@@ -26,6 +29,7 @@ public class MLDataset {
     private String name;
     private int tenantId;
     private String userName;
+    private List<MLDatasetVersion> versions = new ArrayList<>();
 
     /*
      * Type of the data source i.e. hdfs, file, bam etc.
@@ -148,6 +152,15 @@ public class MLDataset {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<MLDatasetVersion> getVersions() {
+        return versions;
+    }
+
+    public void setVersions(MLDatasetVersion versions) {
+        this.versions.add(versions);
+        //this.versions = versions;
     }
 
     @Override
