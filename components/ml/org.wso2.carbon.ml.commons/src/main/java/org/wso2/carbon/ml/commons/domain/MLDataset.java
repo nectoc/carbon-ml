@@ -17,6 +17,8 @@
  */
 package org.wso2.carbon.ml.commons.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,11 +27,17 @@ import java.util.List;
  */
 public class MLDataset {
 
+    public MLDataset(){
+        versions = new ArrayList<>();
+    }
+
     private long id;
     private String name;
     private int tenantId;
     private String userName;
-    private List<MLDatasetVersion> versions = new ArrayList<>();
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLDatasetVersion.class)
+   //@JsonSubTypes({ @JsonSubTypes.Type(value = MLDatasetVersion.class, name = "versions")})
+    private List<MLDatasetVersion> versions;
 
     /*
      * Type of the data source i.e. hdfs, file, bam etc.
@@ -158,9 +166,9 @@ public class MLDataset {
         return versions;
     }
 
-    public void setVersions(MLDatasetVersion versions) {
-        this.versions.add(versions);
-        //this.versions = versions;
+    public void setVersions(List<MLDatasetVersion> versions) {
+        //this.versions.add(versions);
+        this.versions = versions;
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.simple.JSONObject;
 import org.wso2.carbon.ml.commons.domain.MLDataset;
 import org.wso2.carbon.ml.commons.domain.MLDatasetVersion;
 import org.wso2.carbon.ml.commons.domain.SamplePoints;
@@ -39,6 +40,7 @@ import org.wso2.carbon.ml.database.DatabaseService;
 import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -99,13 +101,19 @@ public class MLDatasetProcessor {
 
     public List<MLDataset> getAllDatasets(int tenantId, String userName) throws MLDataProcessingException {
         try {
-            //MemoryModelHandler handler = new MemoryModelHandler();
-            //handler.loadLists(new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" ));
+//            MemoryModelHandler handler = new MemoryModelHandler();
+//            handler.getAllDatasets();
             return databaseService.getAllDatasets(tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
     }
+
+//    public List<MLDataset>loadDatasets(){
+//
+//        MemoryModelHandler handler = new MemoryModelHandler();
+//        return  handler.loadDataset(new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" ));
+//    }
 
     public MLDataset getDataset(int tenantId, String userName, long datasetId) throws MLDataProcessingException {
         try {
@@ -226,7 +234,8 @@ public class MLDatasetProcessor {
             log.debug("datasetSchemaId: " + datasetSchemaId);
         }
         String versionsetName = dataset.getName() + "-" + dataset.getVersion();
-        createDatasetArtifact(dataset);
+         createDatasetArtifact(dataset);
+        //setDataset(dataset);
 
         // build the MLDatasetVersion
         MLDatasetVersion datasetVersion = MLUtils.getMLDatsetVersion(dataset.getTenantId(), datasetSchemaId,
@@ -234,6 +243,8 @@ public class MLDatasetProcessor {
 
         //createArtifact(dataset, datasetVersion);
         createVersionArtifact(datasetVersion,dataset.getName());
+        //createDatasetArtifact(dataset);
+
 
         long datasetVersionId = retrieveDatasetVersionId(datasetVersion);
         if (datasetVersionId != -1) {
@@ -338,43 +349,10 @@ public class MLDatasetProcessor {
         }
     }
 
-    /*public void createArtifact(MLDataset dataset, MLDatasetVersion version) {
-
-        JSONObject obj = new JSONObject();
-        MemoryModelHandler handler = new MemoryModelHandler();
-        List<MLDataset> datasets = handler.insertDatasets(dataset, version);
-
-        for (MLDataset set : datasets) {
-            if (set.getId() == dataset.getId()) {
-                obj.put(dataset.getId(), set.getVersions().get(set.getVersions().size() - 1));
-            }
-        }
-
-        try {
-            File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
-            if (!dir.exists()) {
-                if (dir.mkdir()) {
-                    System.out.println("Directory is created!");
-                } else {
-                    System.out.println("Failed to create directory!");
-                }
-            }
-            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + version.getVersion() + ".json");
-
-            if (!file.exists()) {
-                file.createNewFile();
-                FileWriter fileWriter = new FileWriter(file);
-                fileWriter.write(obj.toJSONString());
-                fileWriter.flush();
-                fileWriter.close();
-
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }*/
+    public void setDataset(MLDataset dataset){
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLDataset> datasets = model.addDatasets(dataset);
+    }
 
     public void createDatasetArtifact(MLDataset dataset){
 
@@ -424,6 +402,7 @@ public class MLDatasetProcessor {
         for(int i=0; i<datasets.size(); i++){
             if(datasets.get(i).getId() == version.getDatasetId()){
                 versions = datasets.get(i).getVersions();
+                System.out.println("Size :"+datasets.get(i).getVersions().size());
                 versionList = versions.get(versions.size()-1);
             }
         }
@@ -443,4 +422,69 @@ public class MLDatasetProcessor {
             e.printStackTrace();
         }
        }
+
+    public void genDatasetArtifact(MLDataset dataset){
+
+        JSONObject obj = new JSONObject();
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLDataset> datasets = model.addDatasets(dataset);
+        MLDataset set = datasets.get(datasets.size()-1);
+        obj.put(set.getUserName()+set.getTenantId(),set);
+
+        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + ".json");
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write(obj.toJSONString());
+                fileWriter.flush();
+                fileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+}
+
+    public void genVersionArtifact(MLDatasetVersion version,String datasetName){
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLDataset> datasets = model.addVersions(version);
+        JSONObject obj = new JSONObject();
+        List<MLDatasetVersion>versions = new ArrayList<>();
+        MLDatasetVersion versionList = new MLDatasetVersion();
+
+        for(int i=0; i<datasets.size(); i++){
+            if(datasets.get(i).getId() == version.getDatasetId()){
+                versions = datasets.get(i).getVersions();
+                System.out.println("Size :"+datasets.get(i).getVersions().size());
+                versionList = versions.get(versions.size()-1);
+                obj.put(versionList.getUserName()+versionList.getTenantId(),versionList);
+            }
+        }
+
+        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator +datasetName + File.separator + version.getVersion() + ".json");
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write(obj.toJSONString());
+                fileWriter.flush();
+                fileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

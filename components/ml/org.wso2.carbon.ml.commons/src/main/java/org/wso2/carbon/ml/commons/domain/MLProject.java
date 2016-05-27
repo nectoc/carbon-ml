@@ -17,6 +17,11 @@
  */
 package org.wso2.carbon.ml.commons.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represent a Project in ML.
  */
@@ -27,6 +32,8 @@ public class MLProject {
     private String datasetName;
     private long datasetId;
     private String datasetStatus;
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLAnalysis.class)
+    private List<MLAnalysis> analyses = new ArrayList<>();
     private int tenantId;
     private String userName;
     private String description;
@@ -111,4 +118,11 @@ public class MLProject {
         this.datasetStatus = datasetStatus;
     }
 
+    public List<MLAnalysis> getAnalyses() {
+        return analyses;
+    }
+
+    public void setAnalyses(List<MLAnalysis> analyses) {
+        this.analyses = analyses;
+    }
 }

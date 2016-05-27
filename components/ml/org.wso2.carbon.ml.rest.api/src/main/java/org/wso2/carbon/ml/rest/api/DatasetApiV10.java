@@ -15,35 +15,31 @@
  */
 package org.wso2.carbon.ml.rest.api;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 import org.apache.http.HttpHeaders;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.ml.commons.constants.MLConstants;
-import org.wso2.carbon.ml.commons.domain.ClusterPoint;
-import org.wso2.carbon.ml.commons.domain.MLDataset;
-import org.wso2.carbon.ml.commons.domain.MLDatasetVersion;
-import org.wso2.carbon.ml.commons.domain.SamplePoints;
-import org.wso2.carbon.ml.commons.domain.ScatterPlotPoints;
+import org.wso2.carbon.ml.commons.domain.*;
 import org.wso2.carbon.ml.core.exceptions.MLDataProcessingException;
 import org.wso2.carbon.ml.core.exceptions.MLInputValidationException;
 import org.wso2.carbon.ml.core.exceptions.MLMalformedDatasetException;
 import org.wso2.carbon.ml.core.exceptions.MLModelHandlerException;
 import org.wso2.carbon.ml.core.impl.MLDatasetProcessor;
 import org.wso2.carbon.ml.core.impl.MLModelHandler;
+import org.wso2.carbon.ml.core.impl.MemoryModelHandler;
 import org.wso2.carbon.ml.core.utils.MLUtils;
 import org.wso2.carbon.ml.rest.api.model.MLDatasetBean;
 import org.wso2.carbon.ml.rest.api.model.MLErrorBean;
 import org.wso2.carbon.ml.rest.api.model.MLVersionBean;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class defines the ML dataset API.
@@ -190,7 +186,11 @@ public class DatasetApiV10 extends MLRestAPI {
         String userName = carbonContext.getUsername();
         try {
             List<MLDatasetBean> datasetBeans = new ArrayList<MLDatasetBean>();
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.getAllDatasets();
+            handler.getProjects();
             List<MLDataset> datasets = datasetProcessor.getAllDatasets(tenantId, userName);
+
             for (MLDataset mlDataset : datasets) {
                 MLDatasetBean datasetBean = new MLDatasetBean();
                 long datasetId = mlDataset.getId();

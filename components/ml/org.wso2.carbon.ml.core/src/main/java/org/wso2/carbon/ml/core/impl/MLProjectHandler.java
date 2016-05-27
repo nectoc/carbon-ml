@@ -17,8 +17,7 @@
  */
 package org.wso2.carbon.ml.core.impl;
 
-import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.ml.commons.domain.MLAnalysis;
@@ -28,6 +27,10 @@ import org.wso2.carbon.ml.core.exceptions.MLProjectHandlerException;
 import org.wso2.carbon.ml.core.utils.MLCoreServiceValueHolder;
 import org.wso2.carbon.ml.database.DatabaseService;
 import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * {@link MLProjectHandler} is responsible for handling/delegating all the project management requests.
@@ -48,6 +51,7 @@ public class MLProjectHandler {
                 throw new MLProjectHandlerException("Invalid dataset [name] " + project.getDatasetName());
             }
             project.setDatasetId(datasetId);
+            createProjectArtifact(project);
             databaseService.insertProject(project);
             log.info(String.format("[Created] %s", project));
         } catch (DatabaseHandlerException e) {
@@ -110,6 +114,43 @@ public class MLProjectHandler {
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }
+    }
+
+    public void createProjectArtifact(MLProject project){
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLProject> projects = model.addProjects(project);
+        ObjectMapper mapper = new ObjectMapper();
+        MLProject set = projects.get(projects.size()-1);
+
+        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "projects" + File.separator + project.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+        try {
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "projects" + File.separator + project.getName()+File.separator + project.getName() + ".json");
+            if(!file.exists()) {
+                mapper.writeValue(new File(
+                        System.getProperty("carbon.home") + File.separator + "repository" +
+                        File.separator + "deployment" + File.separator + "server" + File.separator +
+                        "projects" + File.separator + project.getName() + File.separator + project.getName() +".json"), set);
+                String jsonInString = mapper.writeValueAsString(set);
+                System.out.println(jsonInString);
+
+                // Convert object to JSON string and print
+                jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(set);
+                System.out.println(jsonInString);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

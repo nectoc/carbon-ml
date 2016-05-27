@@ -17,22 +17,21 @@
  */
 package org.wso2.carbon.ml.core.impl;
 
-import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.ml.commons.constants.MLConstants;
-import org.wso2.carbon.ml.commons.domain.MLAnalysis;
-import org.wso2.carbon.ml.commons.domain.MLCustomizedFeature;
+import org.wso2.carbon.ml.commons.domain.*;
 import org.wso2.carbon.ml.commons.domain.config.MLAlgorithm;
-import org.wso2.carbon.ml.commons.domain.FeatureSummary;
-import org.wso2.carbon.ml.commons.domain.MLHyperParameter;
-import org.wso2.carbon.ml.commons.domain.MLModelConfiguration;
-import org.wso2.carbon.ml.commons.domain.MLModelData;
 import org.wso2.carbon.ml.core.exceptions.MLAnalysisHandlerException;
 import org.wso2.carbon.ml.core.utils.MLCoreServiceValueHolder;
 import org.wso2.carbon.ml.database.DatabaseService;
 import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@link MLAnalysisHandler} is responsible for handling/delegating all the analysis related requests.
@@ -50,6 +49,7 @@ public class MLAnalysisHandler {
     
     public void createAnalysis(MLAnalysis analysis) throws MLAnalysisHandlerException {
         try {
+            createAnalysisArtifact(analysis);
             databaseService.insertAnalysis(analysis);
             log.info(String.format("[Created] %s", analysis));
         } catch (DatabaseHandlerException e) {
@@ -283,6 +283,59 @@ public class MLAnalysisHandler {
             return databaseService.getAllModels(tenantId, userName, analysisId);
         } catch (DatabaseHandlerException e) {
             throw new MLAnalysisHandlerException(e.getMessage(), e);
+        }
+    }
+
+    public void createAnalysisArtifact(MLAnalysis analysis) {
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLProject> projects = model.addAnalyses(analysis);
+        ObjectMapper mapper = new ObjectMapper();
+        List<MLAnalysis> versions = new ArrayList<>();
+        MLAnalysis analysisList = new MLAnalysis();
+
+        for (int i = 0; i < projects.size(); i++) {
+            if (projects.get(i).getId() == analysis.getProjectId()) {
+                versions = projects.get(i).getAnalyses();
+                System.out.println("Size :" + projects.get(i).getAnalyses().size());
+                analysisList = versions.get(versions.size() - 1);
+            }
+        }
+        //        int id = (int) version.getDatasetId();
+        //        versionList= datasets.get(id).getVersions().get(datasets.get(id).getVersions().size()-1);
+
+        File dir = new File(
+                System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
+                "deployment" + File.separator + "server" + File.separator + "analyses" +
+                File.separator + analysis.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
+                                "deployment" + File.separator + "server" + File.separator + "analyses" +
+                                 File.separator + analysis.getName() + File.separator + analysis.getName() + ".json");
+        if (!file.exists()) {
+            try {
+                mapper.writeValue(new File(
+                        System.getProperty("carbon.home") + File.separator + "repository" +
+                        File.separator + "deployment" + File.separator + "server" + File.separator +
+                        "analyses" + File.separator + analysis.getName() + File.separator +
+                        analysis.getName() + ".json"), analysisList);
+                String jsonInString = mapper.writeValueAsString(analysisList);
+                System.out.println(jsonInString);
+
+                // Convert object to JSON string and print
+                jsonInString =
+                        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(analysisList);
+                System.out.println(jsonInString);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
