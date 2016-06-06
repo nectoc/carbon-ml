@@ -17,6 +17,11 @@
  */
 package org.wso2.carbon.ml.commons.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represent an Analysis in ML.
  */
@@ -28,6 +33,12 @@ public class MLAnalysis {
     private int tenantId;
     private String userName;
     private String comments;
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLHyperParameter.class)
+    private List<MLHyperParameter> hyperParameters = new ArrayList<>();
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLModelConfiguration.class)
+    private List<MLModelConfiguration> modelConfigurations = new ArrayList<>();
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLCustomizedFeature.class)
+    private List<MLCustomizedFeature>features = new ArrayList<>();
 
     public String getName() {
         return name;
@@ -83,4 +94,27 @@ public class MLAnalysis {
         this.id = id;
     }
 
+    public List<MLHyperParameter> getHyperParameters() {
+        return hyperParameters;
+    }
+
+    public void setHyperParameters(List<MLHyperParameter> hyperParameters) {
+        this.hyperParameters = hyperParameters;
+    }
+
+    public List<MLModelConfiguration> getModelConfigurations() {
+        return modelConfigurations;
+    }
+
+    public void setModelConfigurations(List<MLModelConfiguration> modelConfigurations) {
+        this.modelConfigurations = modelConfigurations;
+    }
+
+    public List<MLCustomizedFeature> getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(List<MLCustomizedFeature> features) {
+        this.features = features;
+    }
 }

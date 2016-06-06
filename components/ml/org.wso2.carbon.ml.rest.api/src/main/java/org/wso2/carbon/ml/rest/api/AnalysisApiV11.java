@@ -15,11 +15,6 @@
  */
 package org.wso2.carbon.ml.rest.api;
 
-import java.util.List;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
@@ -30,6 +25,10 @@ import org.wso2.carbon.ml.core.impl.MLAnalysisHandler;
 import org.wso2.carbon.ml.core.utils.MLUtils;
 import org.wso2.carbon.ml.rest.api.model.MLAnalysisConfigsBean;
 import org.wso2.carbon.ml.rest.api.model.MLErrorBean;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * WSO2 ML Analyses API. All the operations related to analyses are delegated from this class.
@@ -588,6 +587,10 @@ public class AnalysisApiV11 extends MLRestAPI {
     @Consumes("application/json")
     public Response addModelConfiguration(@PathParam("analysisId") long analysisId,
             List<MLModelConfiguration> modelConfigs) {
+            System.out.println("==================List of config==================");
+            for(MLModelConfiguration config : modelConfigs){
+                System.out.println("Key :"+config.getKey() + "value :" + config.getValue());
+            }
         PrivilegedCarbonContext carbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
         int tenantId = carbonContext.getTenantId();
         String userName = carbonContext.getUsername();

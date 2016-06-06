@@ -369,7 +369,6 @@ public class MLDatasetProcessor {
                 System.out.println("Failed to create directory!");
             }
         }
-
         try {
             File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + ".json");
             if(!file.exists()) {
@@ -388,7 +387,6 @@ public class MLDatasetProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     public void createVersionArtifact(MLDatasetVersion version,String datasetName){

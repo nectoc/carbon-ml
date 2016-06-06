@@ -1,10 +1,7 @@
 package org.wso2.carbon.ml.core.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.wso2.carbon.ml.commons.domain.MLAnalysis;
-import org.wso2.carbon.ml.commons.domain.MLDataset;
-import org.wso2.carbon.ml.commons.domain.MLDatasetVersion;
-import org.wso2.carbon.ml.commons.domain.MLProject;
+import org.wso2.carbon.ml.commons.domain.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +15,10 @@ public class MemoryModelHandler {
 
 	public static List<MLDataset> datasets = new ArrayList<>();
 	public static List<MLProject> projects = new ArrayList<>();
+	public static List<MLAnalysis> analyses = new ArrayList<>();
+	public static List<List<MLHyperParameter>> hyperParameters = new ArrayList<>();
+	public static List<List<MLModelConfiguration>> modelConfigurations = new ArrayList<>();
+	public static List<List<MLCustomizedFeature>>features = new ArrayList<>();
 
 	public List<MLDataset> addDatasets(MLDataset dataset){
 
@@ -72,12 +73,14 @@ public class MemoryModelHandler {
 
 	public List<MLProject> addAnalyses(MLAnalysis analysis){
 
+
 		for(int i =0; i<projects.size(); i++) {
 			if(projects.get(i).getId() == analysis.getProjectId()){
 				if(!projects.get(i).getAnalyses().contains(analysis.getName())){
 					analysis.setId(projects.get(i).getAnalyses().size() + 1);
+					MLAnalysis temp = analysis;
+					analyses.add(temp);
 					projects.get(i).getAnalyses().add(analysis);
-
 				}
 				List<MLAnalysis> analysisList = projects.get(i).getAnalyses();
 				for(int j = 0 ; j<projects.get(i).getAnalyses().size(); j++){
@@ -216,7 +219,7 @@ public class MemoryModelHandler {
 			}
 			getAnalyses();
 		}
-		
+
 	}
 
 	public MLProject[] sortProjects(MLProject[] input){
@@ -260,10 +263,38 @@ public class MemoryModelHandler {
 				analysisList.toArray(analyses);
 				MLAnalysis[]arr = sortAnalyses(analyses);
 
+				boolean contains = false;
+				for (MLAnalysis analysis : arr){
+					for(MLAnalysis set : this.analyses){
+						if(set.getId()== analysis.getId()){
+							contains =true;
+						}
+					}
+					if(contains==false){
+						this.analyses.add(analysis);
+					}
+				}
+
 				for(MLProject set : projects){
+					//Checks whether current list has the same project id
 					if(analysisList.get(0).getProjectId()== set.getId()){
+						//If yes then adds the sorted analysis array to that project id
 						for(MLAnalysis analysisNew : arr){
 							set.getAnalyses().add(analysisNew);
+						}
+					}
+				}
+				//Checks whether hyper parameters, features and model config lists are empty
+				if(hyperParameters.size()==0| features.size() == 0| modelConfigurations.size() ==0){
+				for(MLProject pro: projects){
+					//Get list of analyses for each project and add them to a separate list
+					List<MLAnalysis> alist = pro.getAnalyses();
+						for(MLAnalysis a : alist){
+							//Get hyper parameter, feature and model config lists and add them to their static list of lists.
+							//Since they are list of lists single element (an element which contains a list) should be allocated for each analysis
+							hyperParameters.add(a.getHyperParameters());
+							features.add(a.getFeatures());
+							modelConfigurations.add(a.getModelConfigurations());
 						}
 					}
 				}
@@ -286,5 +317,40 @@ public class MemoryModelHandler {
 
 	}
 
+	public void addFeatures(List<MLCustomizedFeature>featureSet){
+		features.add(featureSet);
 
+	}
+
+	public void addHyperParameters(List<MLHyperParameter>hyperParameterList){
+		hyperParameters.add(hyperParameterList);
+	}
+
+	public void addModelConfigurations(List<MLModelConfiguration>configList){
+		modelConfigurations.add(configList);
+	}
+
+	public List<MLAnalysis> configureAnalysis(){
+
+		if(analyses.size()!=0){
+			for(MLAnalysis analysis: analyses) {
+				if (features.get((int) (analysis.getId() - 1)) != null |
+				    hyperParameters.get((int) (analysis.getId() - 1)) != null |
+				    modelConfigurations.get((int) (analysis.getId() - 1)) != null) {
+					analyses.get((int) (analysis.getId() - 1)).setFeatures(
+							features.get((int) (analysis.getId() - 1)));
+					analyses.get((int) (analysis.getId() - 1)).setHyperParameters(
+							hyperParameters.get((int) (analysis.getId() - 1)));
+					analyses.get((int) (analysis.getId() - 1)).setModelConfigurations(modelConfigurations.get((int) (analysis.getId() - 1)));
+				}
+			}
+		}
+		return analyses;
+	}
+
+	public void getAnalysisList(){
+
+
+
+	}
 }

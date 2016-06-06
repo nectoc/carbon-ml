@@ -49,7 +49,9 @@ public class MLAnalysisHandler {
     
     public void createAnalysis(MLAnalysis analysis) throws MLAnalysisHandlerException {
         try {
-            createAnalysisArtifact(analysis);
+            //createAnalysisArtifact(analysis);
+            MemoryModelHandler model = new MemoryModelHandler();
+            List<MLProject> projects = model.addAnalyses(analysis);
             databaseService.insertAnalysis(analysis);
             log.info(String.format("[Created] %s", analysis));
         } catch (DatabaseHandlerException e) {
@@ -60,6 +62,9 @@ public class MLAnalysisHandler {
     public void addCustomizedFeatures(long analysisId, List<MLCustomizedFeature> customizedFeatures, int tenantId, String userName)
             throws MLAnalysisHandlerException {
         try {
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.addFeatures(customizedFeatures);
+            System.out.println("CustomizedFeatures : " + customizedFeatures.size());
             databaseService.insertFeatureCustomized(analysisId, customizedFeatures, tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLAnalysisHandlerException(e.getMessage(), e);
@@ -214,6 +219,9 @@ public class MLAnalysisHandler {
     public void addModelConfigurations(long analysisId, List<MLModelConfiguration> modelConfigs)
             throws MLAnalysisHandlerException {
         try {
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.addModelConfigurations(modelConfigs);
+            System.out.println("Model configs :" + modelConfigs.size());
             databaseService.insertModelConfigurations(analysisId, modelConfigs);
         } catch (DatabaseHandlerException e) {
             throw new MLAnalysisHandlerException(e.getMessage(), e);
@@ -222,6 +230,9 @@ public class MLAnalysisHandler {
 
     public void addHyperParameters(long analysisId, List<MLHyperParameter> hyperParameters, String algorithmName) throws MLAnalysisHandlerException {
         try {
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.addHyperParameters(hyperParameters);
+            System.out.println("hyperParameters :" + hyperParameters.size());
             databaseService.insertHyperParameters(analysisId, hyperParameters, algorithmName);
         } catch (DatabaseHandlerException e) {
             throw new MLAnalysisHandlerException(e.getMessage(), e);
@@ -303,7 +314,6 @@ public class MLAnalysisHandler {
         }
         //        int id = (int) version.getDatasetId();
         //        versionList= datasets.get(id).getVersions().get(datasets.get(id).getVersions().size()-1);
-
         File dir = new File(
                 System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
                 "deployment" + File.separator + "server" + File.separator + "analyses" +

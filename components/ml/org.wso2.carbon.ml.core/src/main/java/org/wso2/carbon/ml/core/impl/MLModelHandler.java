@@ -18,19 +18,8 @@
 package org.wso2.carbon.ml.core.impl;
 
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hex.deeplearning.DeepLearningModel;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
@@ -78,9 +67,19 @@ import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.xml.sax.InputSource;
-
 import scala.Tuple2;
-import hex.deeplearning.DeepLearningModel;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.regex.Pattern;
 
 
 /**
@@ -108,6 +107,12 @@ public class MLModelHandler {
      * @throws MLModelHandlerException
      */
     public MLModelData createModel(MLModelData model) throws MLModelHandlerException {
+
+//        MemoryModelHandler handler = new MemoryModelHandler();
+//        List<MLAnalysis> analyses = handler.configureAnalysis();
+//        MLAnalysis analysisObj = analyses.get(analyses.size()-1);
+//        System.out.println("analysis : " + analysisObj);
+          createAnalysisArtifact();
         try {
             // set the model storage configurations
             Storage modelStorage = MLCoreServiceValueHolder.getInstance().getModelStorage();
@@ -281,6 +286,7 @@ public class MLModelHandler {
                     modelId, tenantId, userName);
             throw new MLModelHandlerException(msg);
         }
+
 
         try {
             long datasetVersionId = databaseService.getDatasetVersionIdOfModel(modelId);
@@ -1232,6 +1238,51 @@ public class MLModelHandler {
                     "analysisName=" + analysisName + "&modelName=" + modelName +"&fromCompare=false";
         }
         return link;
+    }
+
+    public void createAnalysisArtifact() {
+
+        MemoryModelHandler model = new MemoryModelHandler();
+        List<MLAnalysis> analyses = model.configureAnalysis();
+        ObjectMapper mapper = new ObjectMapper();
+        MLAnalysis analysis = analyses.get(analyses.size()-1);
+        System.out.println("analysis : " + analysis);
+
+        File dir = new File(
+                System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
+                "deployment" + File.separator + "server" + File.separator + "analyses" +
+                File.separator + analysis.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
+                             "deployment" + File.separator + "server" + File.separator + "analyses" +
+                             File.separator + analysis.getName() + File.separator + analysis.getName() + ".json");
+        if (!file.exists()) {
+            try {
+                mapper.writeValue(new File(
+                        System.getProperty("carbon.home") + File.separator + "repository" +
+                        File.separator + "deployment" + File.separator + "server" + File.separator +
+                        "analyses" + File.separator + analysis.getName() + File.separator +
+                        analysis.getName() + ".json"), analysis);
+                String jsonInString = mapper.writeValueAsString(analysis);
+                System.out.println(jsonInString);
+
+                // Convert object to JSON string and print
+                jsonInString =
+                        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(analysis);
+                System.out.println(jsonInString);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
     }
 
 
