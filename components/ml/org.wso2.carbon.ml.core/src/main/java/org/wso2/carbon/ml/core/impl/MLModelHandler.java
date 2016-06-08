@@ -108,10 +108,6 @@ public class MLModelHandler {
      */
     public MLModelData createModel(MLModelData model) throws MLModelHandlerException {
 
-//        MemoryModelHandler handler = new MemoryModelHandler();
-//        List<MLAnalysis> analyses = handler.configureAnalysis();
-//        MLAnalysis analysisObj = analyses.get(analyses.size()-1);
-//        System.out.println("analysis : " + analysisObj);
           createAnalysisArtifact();
         try {
             // set the model storage configurations
@@ -138,6 +134,9 @@ public class MLModelHandler {
             model.setStatus(MLConstants.MODEL_STATUS_NOT_STARTED);
 
             databaseService.insertModel(model);
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.addModelData(model);
+//            createModelDataArtifact();
             log.info(String.format("[Created] %s", model));
             return model;
         } catch (DatabaseHandlerException e) {
@@ -287,7 +286,6 @@ public class MLModelHandler {
             throw new MLModelHandlerException(msg);
         }
 
-
         try {
             long datasetVersionId = databaseService.getDatasetVersionIdOfModel(modelId);
             long datasetId = databaseService.getDatasetId(datasetVersionId);
@@ -310,6 +308,7 @@ public class MLModelHandler {
 
             try {
                 lines = extractLines(tenantId, datasetId, sparkContext, dataUrl, dataSourceType, dataType);
+
             } catch (MLMalformedDatasetException e) {
                 throw new MLModelBuilderException("Failed to build the model [id] " + modelId, e);
             }
@@ -323,6 +322,9 @@ public class MLModelHandler {
             threadExecutor.afterExecute(task, null);
 
             databaseService.updateModelStatus(modelId, MLConstants.MODEL_STATUS_IN_PROGRESS);
+            MemoryModelHandler handler = new MemoryModelHandler();
+            handler.changeStatus(modelId,MLConstants.DATASET_VERSION_STATUS_IN_PROGRESS);
+            createModelDataArtifact();
             log.info(String.format("Build model [id] %s job is successfully submitted to Spark.", modelId));
 
             return facts;
@@ -1131,6 +1133,7 @@ public class MLModelHandler {
                     "org.wso2.carbon.ml.model-building-time."+ctxt.getFacts().getAlgorithmName());
             Context context = timer.start();
             String[] emailTemplateParameters = new String[2];
+            MemoryModelHandler handler = new MemoryModelHandler();
             try {
                 long t1 = System.currentTimeMillis();
                 emailTemplateParameters[0] = username;
@@ -1150,6 +1153,9 @@ public class MLModelHandler {
                 log.info(String.format("Successfully built the model [id] %s in %s seconds.", id,
                         (double) (System.currentTimeMillis() - t1) / 1000));
 
+                handler.changeStatus(id,MLConstants.DATASET_VERSION_STATUS_COMPLETE);
+                createModelDataArtifact();
+
                 persistModel(id, ctxt.getModel().getName(), model);
 
                 if (emailNotificationEndpoint != null) {
@@ -1160,6 +1166,8 @@ public class MLModelHandler {
                 }
             } catch (MLInputValidationException e) {
                 log.error(String.format("Failed to build the model [id] %s ", id), e);
+                handler.changeStatus(id,MLConstants.DATASET_VERSION_STATUS_FAILED);
+                createModelDataArtifact();
                 try {
                     databaseService.updateModelStatus(id, MLConstants.MODEL_STATUS_FAILED);
                     databaseService.updateModelError(id, e.getMessage() + "\n" + ctxt.getFacts().toString());
@@ -1281,8 +1289,39 @@ public class MLModelHandler {
                 e.printStackTrace();
             }
         }
+    }
 
+    public void createModelDataArtifact(){
 
+        List<MLModelData> data = MemoryModelHandler.modelData;
+        ObjectMapper mapper = new ObjectMapper();
+        MLModelData modeldata = data.get(data.size()-1);
+
+        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "modeldata" + File.separator + modeldata.getName());
+        if (!dir.exists()) {
+            if (dir.mkdir()) {
+                System.out.println("Directory is created!");
+            } else {
+                System.out.println("Failed to create directory!");
+            }
+        }
+
+            try {
+                mapper.writeValue(new File(
+                        System.getProperty("carbon.home") + File.separator + "repository" +
+                        File.separator + "deployment" + File.separator + "server" + File.separator +
+                        "modeldata" + File.separator + modeldata.getName() + File.separator +
+                        modeldata.getName() + ".json"), modeldata);
+                String jsonInString = mapper.writeValueAsString(modeldata);
+                System.out.println(jsonInString);
+
+                // Convert object to JSON string and print
+                jsonInString =
+                        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(modeldata);
+                System.out.println(jsonInString);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
 
