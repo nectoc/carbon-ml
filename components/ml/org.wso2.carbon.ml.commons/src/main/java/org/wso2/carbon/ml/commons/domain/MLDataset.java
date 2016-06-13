@@ -36,7 +36,6 @@ public class MLDataset {
     private int tenantId;
     private String userName;
     @JsonDeserialize(as=ArrayList.class, contentAs=MLDatasetVersion.class)
-   //@JsonSubTypes({ @JsonSubTypes.Type(value = MLDatasetVersion.class, name = "versions")})
     private List<MLDatasetVersion> versions;
 
     /*

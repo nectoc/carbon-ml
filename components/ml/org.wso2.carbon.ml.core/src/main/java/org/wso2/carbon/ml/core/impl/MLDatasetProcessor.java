@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.simple.JSONObject;
 import org.wso2.carbon.ml.commons.domain.MLDataset;
 import org.wso2.carbon.ml.commons.domain.MLDatasetVersion;
 import org.wso2.carbon.ml.commons.domain.SamplePoints;
@@ -40,7 +39,6 @@ import org.wso2.carbon.ml.database.DatabaseService;
 import org.wso2.carbon.ml.database.exceptions.DatabaseHandlerException;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -370,12 +368,12 @@ public class MLDatasetProcessor {
             }
         }
         try {
-            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + ".json");
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + dataset.getName() + ".json");
             if(!file.exists()) {
                 mapper.writeValue(new File(
                         System.getProperty("carbon.home") + File.separator + "repository" +
                         File.separator + "deployment" + File.separator + "server" + File.separator +
-                        "datasets" + File.separator + dataset.getName() + ".json"), set);
+                        "datasets" + File.separator + dataset.getName()+ File.separator + dataset.getName() + ".json"), set);
                 String jsonInString = mapper.writeValueAsString(set);
                 System.out.println(jsonInString);
 
@@ -421,68 +419,4 @@ public class MLDatasetProcessor {
         }
        }
 
-    public void genDatasetArtifact(MLDataset dataset){
-
-        JSONObject obj = new JSONObject();
-        MemoryModelHandler model = new MemoryModelHandler();
-        List<MLDataset> datasets = model.addDatasets(dataset);
-        MLDataset set = datasets.get(datasets.size()-1);
-        obj.put(set.getUserName()+set.getTenantId(),set);
-
-        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
-        if (!dir.exists()) {
-            if (dir.mkdir()) {
-                System.out.println("Directory is created!");
-            } else {
-                System.out.println("Failed to create directory!");
-            }
-        }
-
-        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + ".json");
-
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                FileWriter fileWriter = new FileWriter(file);
-                fileWriter.write(obj.toJSONString());
-                fileWriter.flush();
-                fileWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-}
-
-    public void genVersionArtifact(MLDatasetVersion version,String datasetName){
-
-        MemoryModelHandler model = new MemoryModelHandler();
-        List<MLDataset> datasets = model.addVersions(version);
-        JSONObject obj = new JSONObject();
-        List<MLDatasetVersion>versions = new ArrayList<>();
-        MLDatasetVersion versionList = new MLDatasetVersion();
-
-        for(int i=0; i<datasets.size(); i++){
-            if(datasets.get(i).getId() == version.getDatasetId()){
-                versions = datasets.get(i).getVersions();
-                System.out.println("Size :"+datasets.get(i).getVersions().size());
-                versionList = versions.get(versions.size()-1);
-                obj.put(versionList.getUserName()+versionList.getTenantId(),versionList);
-            }
-        }
-
-        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator +datasetName + File.separator + version.getVersion() + ".json");
-
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                FileWriter fileWriter = new FileWriter(file);
-                fileWriter.write(obj.toJSONString());
-                fileWriter.flush();
-                fileWriter.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

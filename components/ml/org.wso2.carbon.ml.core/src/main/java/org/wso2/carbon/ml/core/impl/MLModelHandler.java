@@ -1305,7 +1305,6 @@ public class MLModelHandler {
                 System.out.println("Failed to create directory!");
             }
         }
-
             try {
                 mapper.writeValue(new File(
                         System.getProperty("carbon.home") + File.separator + "repository" +

@@ -99,21 +99,24 @@ public class MemoryModelHandler {
 	public void getAllDatasets() {
 		ObjectMapper mapper = new ObjectMapper();
 		File location = new File(
-				System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
-				"deployment" + File.separator + "server" + File.separator + "datasets");
-		File[] files = location.listFiles();
+				System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets");
+		File[] folders = location.listFiles();
 		List<MLDataset> datasetList = new ArrayList<>();
 
-		if (files.length != 0 && datasets.size() == 0) {
+		if (folders.length != 0 && datasets.size() == 0) {
 
-			for (File f : files) {
-				if (f.isFile()) {
-					try {
-						MLDataset dataset = mapper.readValue(f, MLDataset.class);
-						datasetList.add(dataset);
+			for(File folder:folders){
+				File[]files = folder.listFiles();
+				for(File file : files){
+					String name = folder.getName()+".json";
+					if(name.equalsIgnoreCase(file.getName())){
+						try {
+							MLDataset dataset = mapper.readValue(file, MLDataset.class);
+							datasetList.add(dataset);
 
-					} catch (IOException e) {
-						e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
@@ -124,7 +127,7 @@ public class MemoryModelHandler {
 			for (MLDataset set : arr) {
 				datasets.add(set);
 			}
-			getAllVersions();
+		getAllVersions();
 		}
 
 	}
@@ -190,12 +193,16 @@ public class MemoryModelHandler {
 				File[] files = file.listFiles();
 
 				for (File f : files) {
-					try {
-						MLDatasetVersion version = mapper.readValue(f, MLDatasetVersion.class);
-						versionList.add(version);
+					String fileName = file.getName() + ".json";
+					//use to ignore dataset file as we cannot deserialize dataset file to a dataset version obj
+					if (!fileName.equalsIgnoreCase(f.getName())) {
+						try {
+							MLDatasetVersion version = mapper.readValue(f, MLDatasetVersion.class);
+							versionList.add(version);
 
-					} catch (IOException e) {
-						e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 				MLDatasetVersion[] versions = new MLDatasetVersion[versionList.size()];
