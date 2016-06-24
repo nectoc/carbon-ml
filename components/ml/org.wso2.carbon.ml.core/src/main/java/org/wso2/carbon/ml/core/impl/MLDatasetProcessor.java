@@ -21,10 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.ml.commons.domain.MLDataset;
-import org.wso2.carbon.ml.commons.domain.MLDatasetVersion;
-import org.wso2.carbon.ml.commons.domain.SamplePoints;
-import org.wso2.carbon.ml.commons.domain.ScatterPlotPoints;
+import org.wso2.carbon.ml.commons.domain.*;
 import org.wso2.carbon.ml.commons.domain.config.SummaryStatisticsSettings;
 import org.wso2.carbon.ml.core.exceptions.MLDataProcessingException;
 import org.wso2.carbon.ml.core.exceptions.MLInputValidationException;
@@ -347,6 +344,7 @@ public class MLDatasetProcessor {
         }
     }
 
+    //Remove this
     public void setDataset(MLDataset dataset){
         MemoryModelHandler model = new MemoryModelHandler();
         List<MLDataset> datasets = model.addDatasets(dataset);
@@ -358,6 +356,8 @@ public class MLDatasetProcessor {
         List<MLDataset> datasets = model.addDatasets(dataset);
         ObjectMapper mapper = new ObjectMapper();
         MLDataset set = datasets.get(datasets.size()-1);
+        MLDatasetArtifact artifact = model.genArtifact(set);
+
 
         File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
         if (!dir.exists()) {
@@ -368,17 +368,17 @@ public class MLDatasetProcessor {
             }
         }
         try {
-            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + dataset.getName() + ".json");
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + "properties.json");
             if(!file.exists()) {
                 mapper.writeValue(new File(
                         System.getProperty("carbon.home") + File.separator + "repository" +
                         File.separator + "deployment" + File.separator + "server" + File.separator +
-                        "datasets" + File.separator + dataset.getName()+ File.separator + dataset.getName() + ".json"), set);
-                String jsonInString = mapper.writeValueAsString(set);
+                        "datasets" + File.separator + dataset.getName()+ File.separator + "properties.json"), artifact);
+                String jsonInString = mapper.writeValueAsString(artifact);
                 System.out.println(jsonInString);
 
                 // Convert object to JSON string and print
-                jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(set);
+                jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(artifact);
                 System.out.println(jsonInString);
             }
 
@@ -402,9 +402,6 @@ public class MLDatasetProcessor {
                 versionList = versions.get(versions.size()-1);
             }
         }
-//        int id = (int) version.getDatasetId();
-//        versionList= datasets.get(id).getVersions().get(datasets.get(id).getVersions().size()-1);
-
         try {
             mapper.writeValue( new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator +datasetName + File.separator + version.getVersion() + ".json"), versionList);
             String jsonInString = mapper.writeValueAsString(versionList);

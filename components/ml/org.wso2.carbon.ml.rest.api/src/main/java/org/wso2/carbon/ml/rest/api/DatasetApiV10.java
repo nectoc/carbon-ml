@@ -189,7 +189,6 @@ public class DatasetApiV10 extends MLRestAPI {
             MemoryModelHandler handler = new MemoryModelHandler();
             handler.getAllDatasets();
             handler.getProjects();
-            handler.getModelData();
             List<MLDataset> datasets = datasetProcessor.getAllDatasets(tenantId, userName);
 
             for (MLDataset mlDataset : datasets) {

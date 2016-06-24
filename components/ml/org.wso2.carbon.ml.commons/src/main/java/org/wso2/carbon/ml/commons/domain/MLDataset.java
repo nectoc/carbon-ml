@@ -37,6 +37,8 @@ public class MLDataset {
     private String userName;
     @JsonDeserialize(as=ArrayList.class, contentAs=MLDatasetVersion.class)
     private List<MLDatasetVersion> versions;
+    @JsonDeserialize(as=ArrayList.class, contentAs=Feature.class)
+    private List<Feature> defaultFeatures;
 
     /*
      * Type of the data source i.e. hdfs, file, bam etc.
@@ -168,6 +170,14 @@ public class MLDataset {
     public void setVersions(List<MLDatasetVersion> versions) {
         //this.versions.add(versions);
         this.versions = versions;
+    }
+
+    public List<Feature> getDefaultFeatures() {
+        return defaultFeatures;
+    }
+
+    public void setDefaultFeatures(List<Feature> defaultFeatures) {
+        this.defaultFeatures = defaultFeatures;
     }
 
     @Override

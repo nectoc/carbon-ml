@@ -108,7 +108,7 @@ public class MLModelHandler {
      */
     public MLModelData createModel(MLModelData model) throws MLModelHandlerException {
 
-          createAnalysisArtifact();
+          createAnalysisArtifact(model.getAnalysisId());
         try {
             // set the model storage configurations
             Storage modelStorage = MLCoreServiceValueHolder.getInstance().getModelStorage();
@@ -135,7 +135,7 @@ public class MLModelHandler {
 
             databaseService.insertModel(model);
             MemoryModelHandler handler = new MemoryModelHandler();
-            handler.addModelData(model);
+            handler.addModel(model);
 //            createModelDataArtifact();
             log.info(String.format("[Created] %s", model));
             return model;
@@ -323,8 +323,8 @@ public class MLModelHandler {
 
             databaseService.updateModelStatus(modelId, MLConstants.MODEL_STATUS_IN_PROGRESS);
             MemoryModelHandler handler = new MemoryModelHandler();
-            handler.changeStatus(modelId,MLConstants.DATASET_VERSION_STATUS_IN_PROGRESS);
-            createModelDataArtifact();
+            handler.changeStats(modelId, MLConstants.DATASET_VERSION_STATUS_IN_PROGRESS);
+            createModelDataArtifact(modelId);
             log.info(String.format("Build model [id] %s job is successfully submitted to Spark.", modelId));
 
             return facts;
@@ -1153,8 +1153,8 @@ public class MLModelHandler {
                 log.info(String.format("Successfully built the model [id] %s in %s seconds.", id,
                         (double) (System.currentTimeMillis() - t1) / 1000));
 
-                handler.changeStatus(id,MLConstants.DATASET_VERSION_STATUS_COMPLETE);
-                createModelDataArtifact();
+                handler.changeStats(id, MLConstants.DATASET_VERSION_STATUS_COMPLETE);
+                createModelDataArtifact(id);
 
                 persistModel(id, ctxt.getModel().getName(), model);
 
@@ -1166,8 +1166,8 @@ public class MLModelHandler {
                 }
             } catch (MLInputValidationException e) {
                 log.error(String.format("Failed to build the model [id] %s ", id), e);
-                handler.changeStatus(id,MLConstants.DATASET_VERSION_STATUS_FAILED);
-                createModelDataArtifact();
+                handler.changeStats(id, MLConstants.DATASET_VERSION_STATUS_FAILED);
+                createModelDataArtifact(id);
                 try {
                     databaseService.updateModelStatus(id, MLConstants.MODEL_STATUS_FAILED);
                     databaseService.updateModelError(id, e.getMessage() + "\n" + ctxt.getFacts().toString());
@@ -1248,12 +1248,12 @@ public class MLModelHandler {
         return link;
     }
 
-    public void createAnalysisArtifact() {
+    public void createAnalysisArtifact(long analysisId) {
 
         MemoryModelHandler model = new MemoryModelHandler();
-        List<MLAnalysis> analyses = model.configureAnalysis();
+        //List<MLAnalysis> analyses = model.configureAnalysis();
         ObjectMapper mapper = new ObjectMapper();
-        MLAnalysis analysis = analyses.get(analyses.size()-1);
+        MLAnalysis analysis = model.getAnalysis(analysisId);
         System.out.println("analysis : " + analysis);
 
         File dir = new File(
@@ -1291,11 +1291,12 @@ public class MLModelHandler {
         }
     }
 
-    public void createModelDataArtifact(){
+    public void createModelDataArtifact(long modelId){
 
-        List<MLModelData> data = MemoryModelHandler.modelData;
+        //List<MLModelData> data = MemoryModelHandler.modelData;
+        MemoryModelHandler handler = new MemoryModelHandler();
         ObjectMapper mapper = new ObjectMapper();
-        MLModelData modeldata = data.get(data.size()-1);
+        MLModelData modeldata = handler.getModel(modelId);
 
         File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "modeldata" + File.separator + modeldata.getName());
         if (!dir.exists()) {

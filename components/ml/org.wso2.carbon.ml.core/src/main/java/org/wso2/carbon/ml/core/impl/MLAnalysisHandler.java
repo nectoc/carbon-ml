@@ -47,7 +47,7 @@ public class MLAnalysisHandler {
         try {
             //createAnalysisArtifact(analysis);
             MemoryModelHandler model = new MemoryModelHandler();
-            List<MLProject> projects = model.addAnalyses(analysis);
+            List<MLProject> projects = model.addAnalysis(analysis);
             databaseService.insertAnalysis(analysis);
             log.info(String.format("[Created] %s", analysis));
         } catch (DatabaseHandlerException e) {
@@ -59,7 +59,7 @@ public class MLAnalysisHandler {
             throws MLAnalysisHandlerException {
         try {
             MemoryModelHandler handler = new MemoryModelHandler();
-            handler.addFeatures(customizedFeatures);
+            handler.addCustomizedFeatures(customizedFeatures,analysisId);
             System.out.println("CustomizedFeatures : " + customizedFeatures.size());
             databaseService.insertFeatureCustomized(analysisId, customizedFeatures, tenantId, userName);
         } catch (DatabaseHandlerException e) {
@@ -216,7 +216,7 @@ public class MLAnalysisHandler {
             throws MLAnalysisHandlerException {
         try {
             MemoryModelHandler handler = new MemoryModelHandler();
-            handler.addModelConfigurations(modelConfigs);
+            handler.addModelConfigurations(modelConfigs,analysisId);
             System.out.println("Model configs :" + modelConfigs.size());
             databaseService.insertModelConfigurations(analysisId, modelConfigs);
         } catch (DatabaseHandlerException e) {
@@ -227,7 +227,7 @@ public class MLAnalysisHandler {
     public void addHyperParameters(long analysisId, List<MLHyperParameter> hyperParameters, String algorithmName) throws MLAnalysisHandlerException {
         try {
             MemoryModelHandler handler = new MemoryModelHandler();
-            handler.addHyperParameters(hyperParameters);
+            handler.addHyperParameters(hyperParameters,analysisId);
             System.out.println("hyperParameters :" + hyperParameters.size());
             databaseService.insertHyperParameters(analysisId, hyperParameters, algorithmName);
         } catch (DatabaseHandlerException e) {

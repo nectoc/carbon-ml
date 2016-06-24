@@ -33,6 +33,9 @@ public class MLAnalysis {
     private int tenantId;
     private String userName;
     private String comments;
+    //List of models per analysis
+    @JsonDeserialize(as=ArrayList.class, contentAs=MLModelData.class)
+    private List<MLModelData>models= new ArrayList<>();
     @JsonDeserialize(as=ArrayList.class, contentAs=MLHyperParameter.class)
     private List<MLHyperParameter> hyperParameters = new ArrayList<>();
     @JsonDeserialize(as=ArrayList.class, contentAs=MLModelConfiguration.class)
@@ -116,5 +119,13 @@ public class MLAnalysis {
 
     public void setFeatures(List<MLCustomizedFeature> features) {
         this.features = features;
+    }
+
+    public List<MLModelData> getModels() {
+        return models;
+    }
+
+    public void setModels(List<MLModelData> models) {
+        this.models = models;
     }
 }

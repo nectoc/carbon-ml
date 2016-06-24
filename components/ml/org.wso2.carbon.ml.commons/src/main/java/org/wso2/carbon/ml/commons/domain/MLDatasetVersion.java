@@ -17,6 +17,11 @@
  */
 package org.wso2.carbon.ml.commons.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represent a version-set in ML.
  */
@@ -28,6 +33,10 @@ public class MLDatasetVersion {
     private String version;
     private int tenantId;
     private String userName;
+
+    //Contains default features and their summaries which generate during dataset generation
+    @JsonDeserialize(as=ArrayList.class, contentAs=FeatureSummary.class)
+    private List<FeatureSummary> featureSum;
     
     /*
      * Target server side path of the data-set.
@@ -115,4 +124,11 @@ public class MLDatasetVersion {
         this.datasetId = datasetId;
     }
 
+    public List<FeatureSummary> getFeatureSum() {
+        return featureSum;
+    }
+
+    public void setFeatureSum(List<FeatureSummary> featureSum) {
+        this.featureSum = featureSum;
+    }
 }

@@ -70,6 +70,7 @@ public class MLProjectHandler {
     
     public MLProject getProject(int tenantId, String userName, String projectName) throws MLProjectHandlerException {
         try {
+
             return databaseService.getProject(tenantId, userName, projectName);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);

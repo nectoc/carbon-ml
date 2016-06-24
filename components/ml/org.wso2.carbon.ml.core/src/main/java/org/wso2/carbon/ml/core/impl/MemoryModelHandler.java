@@ -6,6 +6,7 @@ import org.wso2.carbon.ml.commons.domain.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -15,11 +16,6 @@ public class MemoryModelHandler {
 
 	public static List<MLDataset> datasets = new ArrayList<>();
 	public static List<MLProject> projects = new ArrayList<>();
-	public static List<MLAnalysis> analyses = new ArrayList<>();
-	public static List<MLModelData> modelData = new ArrayList<>();
-	public static List<List<MLHyperParameter>> hyperParameters = new ArrayList<>();
-	public static List<List<MLModelConfiguration>> modelConfigurations = new ArrayList<>();
-	public static List<List<MLCustomizedFeature>> features = new ArrayList<>();
 
 	public List<MLDataset> addDatasets(MLDataset dataset) {
 
@@ -74,25 +70,33 @@ public class MemoryModelHandler {
 		return projects;
 	}
 
-	public List<MLProject> addAnalyses(MLAnalysis analysis) {
-
-		for (int i = 0; i < projects.size(); i++) {
-			if (projects.get(i).getId() == analysis.getProjectId()) {
-				if (!projects.get(i).getAnalyses().contains(analysis.getName())) {
-					//					analysis.setId(projects.get(i).getAnalyses().size() + 1);
-					analysis.setId(analyses.size() + 1);
-					MLAnalysis temp = analysis;
-					analyses.add(temp);
-					projects.get(i).getAnalyses().add(analysis);
-				}
-				List<MLAnalysis> analysisList = projects.get(i).getAnalyses();
-				for (int j = 0; j < projects.get(i).getAnalyses().size(); j++) {
-					System.out.println("Id : " + analysisList.get(j).getId() + "Name : " +
-					                   analysisList.get(j).getName() + "index when adding : " + j);
+	public MLAnalysis getAnalysis(long analysisId){
+		MLAnalysis analysis = null;
+		for(MLProject project: projects){
+			for(MLAnalysis temp : project.getAnalyses()){
+				if(temp.getId()==analysisId){
+					analysis = temp;
 				}
 			}
 		}
+		return analysis;
+	}
 
+	public List<MLProject> addAnalysis(MLAnalysis analysis){
+
+		long projectId = analysis.getProjectId();
+		int analysisCount = 0;
+		for(MLProject project : projects){
+			int count = project.getAnalyses().size();
+			analysisCount+=count;
+		}
+
+		for(int i = 0; i<projects.size(); i++) {
+			if(projects.get(i).getId() == projectId){
+				analysis.setId(analysisCount+1);
+				projects.get(i).getAnalyses().add(analysis);
+			}
+		}
 		return projects;
 	}
 
@@ -108,10 +112,12 @@ public class MemoryModelHandler {
 			for(File folder:folders){
 				File[]files = folder.listFiles();
 				for(File file : files){
-					String name = folder.getName()+".json";
+					//To get the datasetNAme.json file as folder creates under dataset name
+					String name = "properties.json";
 					if(name.equalsIgnoreCase(file.getName())){
 						try {
-							MLDataset dataset = mapper.readValue(file, MLDataset.class);
+							MLDatasetArtifact artifact = mapper.readValue(file, MLDatasetArtifact.class);
+							MLDataset dataset = genDataset(artifact);
 							datasetList.add(dataset);
 
 						} catch (IOException e) {
@@ -122,6 +128,7 @@ public class MemoryModelHandler {
 			}
 			MLDataset[] datasetArr = new MLDataset[datasetList.size()];
 			datasetList.toArray(datasetArr);
+			//Sorts using insertion sort
 			MLDataset[] arr = sortDatasets(datasetArr);
 
 			for (MLDataset set : arr) {
@@ -193,7 +200,7 @@ public class MemoryModelHandler {
 				File[] files = file.listFiles();
 
 				for (File f : files) {
-					String fileName = file.getName() + ".json";
+					String fileName = "properties.json";
 					//use to ignore dataset file as we cannot deserialize dataset file to a dataset version obj
 					if (!fileName.equalsIgnoreCase(f.getName())) {
 						try {
@@ -210,9 +217,10 @@ public class MemoryModelHandler {
 				MLDatasetVersion[] arr = sortVersions(versions);
 
 				for (MLDataset set : datasets) {
-					//Version list always contains a list of version for a single dataset as it goes through one folder at a time
+					//Version list always contains a list of versions for a single dataset as it goes through one folder at a time
 					if (versionList.get(0).getDatasetId() == set.getId()) {
 						for (MLDatasetVersion versionNew : arr) {
+							//Adding dataset versions to relevant dataset
 							set.getVersions().add(versionNew);
 						}
 					}
@@ -249,7 +257,8 @@ public class MemoryModelHandler {
 			for (MLProject set : arr) {
 				projects.add(set);
 			}
-			getAnalyses();
+			//getAnalyses();
+			loadAnalyses();
 		}
 
 	}
@@ -269,25 +278,25 @@ public class MemoryModelHandler {
 
 	}
 
-	public void getAnalyses() {
+	public void loadAnalyses(){
 
 		ObjectMapper mapper = new ObjectMapper();
-		File location = new File(
-				System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
-				"deployment" + File.separator + "server" + File.separator + "analyses");
+		File location = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "analyses");
+		//All the files and folders in given location
 		File[] list = location.listFiles();
 		List<MLAnalysis> analysisList = new ArrayList<>();
+		List<MLAnalysis> lists = new ArrayList<>();
 
-		if (analyses.size() == 0 && location.list().length != 0) {
+		if (projects.get(0).getAnalyses().size()==0 && location.list().length != 0) {
 			for (File file : list) {
 				if (file.isDirectory()) {
-					//				analysisList = new ArrayList<>();
 					File[] files = file.listFiles();
 
 					for (File f : files) {
 						try {
 							MLAnalysis analysis = mapper.readValue(f, MLAnalysis.class);
-							analysisList.add(analysis);
+									analysisList.add(analysis);
+
 
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -298,44 +307,20 @@ public class MemoryModelHandler {
 			MLAnalysis[] analyses = new MLAnalysis[analysisList.size()];
 			analysisList.toArray(analyses);
 			MLAnalysis[] arr = sortAnalyses(analyses);
+			lists = new ArrayList<MLAnalysis>(Arrays.asList(arr));
 
-			boolean contains = false;
-			for (MLAnalysis analysis : arr) {
-				for (MLAnalysis set : this.analyses) {
-					if (set.getId() == analysis.getId()) {
-						contains = true;
-					}
-				}
-				if (contains == false) {
-					this.analyses.add(analysis);
-				}
-			}
 
-			for (MLProject set : projects) {
-				//Checks whether current list has the same project id
-				if (analysisList.get(0).getProjectId() == set.getId()) {
-					//If yes then adds the sorted analysis array to that project id
-					for (MLAnalysis analysisNew : arr) {
-						set.getAnalyses().add(analysisNew);
+			for(MLAnalysis analysis : lists){
+				for(MLProject project : projects){
+					if(analysis.getProjectId()==project.getId()){
+						project.getAnalyses().add(analysis);
 					}
 				}
 			}
-			//Checks whether hyper parameters, features and model config lists are empty
-			if (hyperParameters.size() == 0 | features.size() == 0 |
-			    modelConfigurations.size() == 0) {
-				for (MLProject pro : projects) {
-					//Get list of analyses for each project and add them to a separate list
-					List<MLAnalysis> alist = pro.getAnalyses();
-					for (MLAnalysis a : alist) {
-						//Get hyper parameter, feature and model config lists and add them to their static list of lists.
-						//Since they are list of lists single element (an element which contains a list) should be allocated for each analysis
-						hyperParameters.add(a.getHyperParameters());
-						features.add(a.getFeatures());
-						modelConfigurations.add(a.getModelConfigurations());
-					}
-				}
-			}
+			getModelData();
+
 		}
+
 	}
 
 	public MLAnalysis[] sortAnalyses(MLAnalysis[] input) {
@@ -353,74 +338,86 @@ public class MemoryModelHandler {
 
 	}
 
-	public void addFeatures(List<MLCustomizedFeature> featureSet) {
-		features.add(featureSet);
-
-	}
-
-	public void addHyperParameters(List<MLHyperParameter> hyperParameterList) {
-		hyperParameters.add(hyperParameterList);
-	}
-
-	public void addModelConfigurations(List<MLModelConfiguration> configList) {
-		modelConfigurations.add(configList);
-	}
-
-	public List<MLAnalysis> configureAnalysis() {
-
-		if (analyses.size() != 0) {
-			for (MLAnalysis analysis : analyses) {
-				if (features.get((int) (analysis.getId() - 1)) != null |
-				    hyperParameters.get((int) (analysis.getId() - 1)) != null |
-				    modelConfigurations.get((int) (analysis.getId() - 1)) != null) {
-					analyses.get((int) (analysis.getId() - 1))
-					        .setFeatures(features.get((int) (analysis.getId() - 1)));
-					analyses.get((int) (analysis.getId() - 1))
-					        .setHyperParameters(hyperParameters.get((int) (analysis.getId() - 1)));
-					analyses.get((int) (analysis.getId() - 1)).setModelConfigurations(
-							modelConfigurations.get((int) (analysis.getId() - 1)));
+	public void addHyperParameters(List<MLHyperParameter> parameters, long analysisId){
+		for(MLProject project: projects){
+			for(MLAnalysis analysis : project.getAnalyses()){
+				if(analysis.getId()==analysisId){
+					analysis.setHyperParameters(parameters);
 				}
 			}
 		}
-		return analyses;
 	}
 
-	public List<MLModelData> addModelData(MLModelData model) {
-
-		boolean exists = false;
-		for (MLModelData data : modelData) {
-			if (model.getName().equalsIgnoreCase(data.getName())) {
-				exists = true;
+	public void addModelConfigurations(List<MLModelConfiguration>config, long analysisId){
+		for(MLProject project: projects){
+			for(MLAnalysis analysis : project.getAnalyses()){
+				if(analysis.getId()==analysisId){
+					analysis.setModelConfigurations(config);
+				}
 			}
 		}
-		if (exists == false) {
-			model.setId(modelData.size() + 1);
-			modelData.add(model);
-		}
 
-		return modelData;
 	}
 
-	public List<MLModelData> changeStatus(long modelId, String status) {
-
-		for (MLModelData model : modelData) {
-			if (model.getId() == modelId) {
-				model.setStatus(status);
+	public void addCustomizedFeatures(List<MLCustomizedFeature> custFeatues, long analysisId){
+		for(MLProject project: projects){
+			for(MLAnalysis analysis : project.getAnalyses()){
+				if(analysis.getId()==analysisId){
+					analysis.setFeatures(custFeatues);
+				}
 			}
 		}
-		return modelData;
+	}
+
+	//adding model data to analysis bean
+	public List<MLProject> addModel(MLModelData model){
+
+		int modelCount = 0;
+		for(MLProject project : projects){
+			for(MLAnalysis analysis: project.getAnalyses()){
+					int count = analysis.getModels().size();
+					modelCount+=count;
+			}
+		}
+
+		long analysisId = model.getAnalysisId();
+		for(MLProject project: projects){
+			for(MLAnalysis analysis : project.getAnalyses()){
+				if(analysis.getId() == analysisId) {
+					model.setId(modelCount+1);
+					analysis.getModels().add(model);
+				}
+			}
+		}
+		return projects;
+	}
+
+	//new method to change modelStatus
+	public MLModelData changeStats(long modelId,String status){
+		MLModelData model = null;
+
+		for(MLProject project: projects){
+			for(MLAnalysis analysis: project.getAnalyses()){
+				for(MLModelData modelData : analysis.getModels()){
+					if(modelData.getId() == modelId){
+						modelData.setStatus(status);
+						model = modelData;
+					}
+				}
+			}
+		}
+		return model;
 	}
 
 	public void getModelData() {
 
 		ObjectMapper mapper = new ObjectMapper();
-		File location = new File(
-				System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
-				"deployment" + File.separator + "server" + File.separator + "modeldata");
+		File location = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "modeldata");
 		File[] list = location.listFiles();
 		List<MLModelData> modelList = new ArrayList<>();
+		List<MLModelData>lists = new ArrayList<>();
 
-		if (modelData.size() == 0 && location.list().length != 0) {
+		if (projects.get(0).getAnalyses().get(0).getModels().size() == 0 && location.list().length != 0) {
 			for (File file : list) {
 				if (file.isDirectory()) {
 					File[] files = file.listFiles();
@@ -429,6 +426,7 @@ public class MemoryModelHandler {
 						try {
 							MLModelData modeldata = mapper.readValue(f, MLModelData.class);
 							modelList.add(modeldata);
+
 
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -439,20 +437,122 @@ public class MemoryModelHandler {
 			MLModelData[] models = new MLModelData[modelList.size()];
 			modelList.toArray(models);
 			MLModelData[] arr = sortModelData(models);
+			lists = new ArrayList<MLModelData>(Arrays.asList(arr));
 
-			boolean contains = false;
-			for (MLModelData data : arr) {
-				for (MLModelData set : this.modelData) {
-					if (set.getId() == data.getId()) {
-						contains = true;
+//			boolean contains = false;
+//			for (MLModelData data : arr) {
+//				for (MLModelData set : this.modelData) {
+//					if (set.getId() == data.getId()) {
+//						contains = true;
+//					}
+//				}
+//				if (contains == false) {
+//					this.modelData.add(data);
+//				}
+//			}
+			for(MLModelData set: lists){
+
+				for(MLProject project: projects){
+					for(MLAnalysis analysis: project.getAnalyses()){
+						if(analysis.getId()== set.getAnalysisId()){
+							analysis.getModels().add(set);
+						}
 					}
 				}
-				if (contains == false) {
-					this.modelData.add(data);
-				}
 			}
+
+
+
 		}
 
 	}
 
-}
+	public MLModelData getModel(long modelId){
+		MLModelData model = null;
+		for(MLProject project: projects){
+			for(MLAnalysis temp : project.getAnalyses()){
+				for(MLModelData tempModel: temp.getModels()){
+					if(tempModel.getId()==modelId){
+						model = tempModel;
+					}
+				}
+			}
+		}
+		return model;
+	}
+	
+	public MLDatasetArtifact genArtifact(MLDataset dataset){
+
+		MLDatasetArtifact artifact = new MLDatasetArtifact();
+		artifact.setId(dataset.getId());
+		artifact.setName(dataset.getName());
+		artifact.setTenantId(dataset.getTenantId());
+		artifact.setUserName(dataset.getUserName());
+		artifact.setDefaultFeatures(dataset.getDefaultFeatures());
+		artifact.setSourcePath(dataset.getSourcePath());
+		artifact.setDataType(dataset.getDataType());
+		artifact.setComments(dataset.getComments());
+		artifact.setContainsHeader(dataset.isContainsHeader());
+		return artifact;
+	}
+
+	public MLDataset getDataset(long datasetId){
+		MLDataset dataset = null;
+		for(MLDataset set: datasets){
+			if(set.getId()== datasetId){
+				dataset = set;
+			}
+		}
+		return dataset;
+	}
+
+	//Use to convert MLDatasetArtifact object to a MLDataset object during server startup
+	public MLDataset genDataset(MLDatasetArtifact artifact){
+
+		MLDataset dataset = new MLDataset();
+		dataset.setId(artifact.getId());
+		dataset.setName(artifact.getName());
+		dataset.setTenantId(artifact.getTenantId());
+		dataset.setUserName(artifact.getUserName());
+		dataset.setDefaultFeatures(artifact.getDefaultFeatures());
+		dataset.setSourcePath(artifact.getSourcePath());
+		dataset.setDataType(artifact.getDataType());
+		dataset.setComments(artifact.getComments());
+		dataset.setContainsHeader(artifact.isContainsHeader());
+		return dataset;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	}
