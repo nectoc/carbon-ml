@@ -38,6 +38,7 @@ import java.util.List;
 public class MLProjectHandler {
     private static final Log log = LogFactory.getLog(MLProjectHandler.class);
     private DatabaseService databaseService;
+    MemoryModelHandler memoryModelHandler = new MemoryModelHandler();
 
     public MLProjectHandler() {
         databaseService = MLCoreServiceValueHolder.getInstance().getDatabaseService();
@@ -45,7 +46,7 @@ public class MLProjectHandler {
     
     public void createProject(MLProject project) throws MLProjectHandlerException {
         try {
-            long datasetId = databaseService.getDatasetId(project.getDatasetName(), project.getTenantId(),
+            long datasetId =  memoryModelHandler.getDatasetId(project.getDatasetName(), project.getTenantId(),
                     project.getUserName());
             if (datasetId == -1) {
                 throw new MLProjectHandlerException("Invalid dataset [name] " + project.getDatasetName());
@@ -61,7 +62,7 @@ public class MLProjectHandler {
     
     public void deleteProject(int tenantId, String userName, long projectId) throws MLProjectHandlerException {
         try {
-            databaseService.deleteProject(tenantId, userName, projectId);
+            memoryModelHandler.deleteProject(tenantId, userName, projectId);
             log.info(String.format("[Deleted] [project] %s of [user] %s of [tenant] %s", projectId, userName, tenantId));
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
@@ -71,7 +72,7 @@ public class MLProjectHandler {
     public MLProject getProject(int tenantId, String userName, String projectName) throws MLProjectHandlerException {
         try {
 
-            return databaseService.getProject(tenantId, userName, projectName);
+            return  memoryModelHandler.getProject(tenantId, userName, projectName);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }
@@ -87,7 +88,7 @@ public class MLProjectHandler {
     
     public List<MLProject> getAllProjects(int tenantId, String userName) throws MLProjectHandlerException {
         try {
-            return databaseService.getAllProjects(tenantId, userName);
+            return  memoryModelHandler.getAllProjects(tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }
@@ -95,7 +96,7 @@ public class MLProjectHandler {
 
     public List<MLModelData> getProjectModels(int tenantId, String userName, long projectId) throws MLProjectHandlerException {
         try {
-            return databaseService.getProjectModels(tenantId, userName, projectId);
+            return  memoryModelHandler.getProjectModels(tenantId, userName, projectId);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }
@@ -103,7 +104,7 @@ public class MLProjectHandler {
     
     public List<MLAnalysis> getAllAnalysesOfProject(int tenantId, String userName, long projectId) throws MLProjectHandlerException {
         try {
-            return databaseService.getAllAnalysesOfProject(tenantId, userName, projectId);
+            return  memoryModelHandler.getAllAnalysesOfProject(tenantId, userName, projectId);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }
@@ -111,7 +112,7 @@ public class MLProjectHandler {
 
     public MLAnalysis getAnalysisOfProject(int tenantId, String userName, long projectId, String analysisName) throws MLProjectHandlerException {
         try {
-            return databaseService.getAnalysisOfProject(tenantId, userName, projectId, analysisName);
+            return  memoryModelHandler.getAnalysisOfProject(tenantId, userName, projectId, analysisName);
         } catch (DatabaseHandlerException e) {
             throw new MLProjectHandlerException(e.getMessage(), e);
         }

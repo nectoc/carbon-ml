@@ -292,57 +292,5 @@ public class MLAnalysisHandler {
             throw new MLAnalysisHandlerException(e.getMessage(), e);
         }
     }
-//
-//    public void createAnalysisArtifact(MLAnalysis analysis) {
-//
-//        MemoryModelHandler model = new MemoryModelHandler();
-//        List<MLProject> projects = model.addAnalyses(analysis);
-//        ObjectMapper mapper = new ObjectMapper();
-//        List<MLAnalysis> versions = new ArrayList<>();
-//        MLAnalysis analysisList = new MLAnalysis();
-//
-//        for (int i = 0; i < projects.size(); i++) {
-//            if (projects.get(i).getId() == analysis.getProjectId()) {
-//                versions = projects.get(i).getAnalyses();
-//                System.out.println("Size :" + projects.get(i).getAnalyses().size());
-//                analysisList = versions.get(versions.size() - 1);
-//            }
-//        }
-//        //        int id = (int) version.getDatasetId();
-//        //        versionList= datasets.get(id).getVersions().get(datasets.get(id).getVersions().size()-1);
-//        File dir = new File(
-//                System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
-//                "deployment" + File.separator + "server" + File.separator + "analyses" +
-//                File.separator + analysis.getName());
-//        if (!dir.exists()) {
-//            if (dir.mkdir()) {
-//                System.out.println("Directory is created!");
-//            } else {
-//                System.out.println("Failed to create directory!");
-//            }
-//        }
-//
-//        File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator +
-//                                "deployment" + File.separator + "server" + File.separator + "analyses" +
-//                                 File.separator + analysis.getName() + File.separator + analysis.getName() + ".json");
-//        if (!file.exists()) {
-//            try {
-//                mapper.writeValue(new File(
-//                        System.getProperty("carbon.home") + File.separator + "repository" +
-//                        File.separator + "deployment" + File.separator + "server" + File.separator +
-//                        "analyses" + File.separator + analysis.getName() + File.separator +
-//                        analysis.getName() + ".json"), analysisList);
-//                String jsonInString = mapper.writeValueAsString(analysisList);
-//                System.out.println(jsonInString);
-//
-//                // Convert object to JSON string and print
-//                jsonInString =
-//                        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(analysisList);
-//                System.out.println(jsonInString);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
 
 }

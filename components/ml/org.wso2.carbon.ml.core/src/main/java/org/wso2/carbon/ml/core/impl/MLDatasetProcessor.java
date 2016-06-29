@@ -50,6 +50,7 @@ public class MLDatasetProcessor {
     private SummaryStatisticsSettings summaryStatsSettings;
     private BlockingExecutor threadExecutor;
     private DatabaseService databaseService;
+    private MemoryModelHandler memoryModelHandler = new MemoryModelHandler();
 
     public MLDatasetProcessor() {
         MLCoreServiceValueHolder valueHolder = MLCoreServiceValueHolder.getInstance();
@@ -61,7 +62,8 @@ public class MLDatasetProcessor {
     public List<MLDatasetVersion> getAllDatasetVersions(int tenantId, String userName, long datasetId)
             throws MLDataProcessingException {
         try {
-            return databaseService.getAllVersionsetsOfDataset(tenantId, userName, datasetId);
+            return memoryModelHandler.getAllVersionsetsOfDataset(tenantId, userName, datasetId);
+            //return memoryModelHandler.getAllVersionsetsOfDataset(tenantId, userName, datasetId);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -70,7 +72,7 @@ public class MLDatasetProcessor {
     public MLDatasetVersion getVersionset(int tenantId, String userName, long versionsetId)
             throws MLDataProcessingException {
         try {
-            return databaseService.getVersionset(tenantId, userName, versionsetId);
+            return memoryModelHandler.getVersionset(tenantId, userName, versionsetId);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -79,7 +81,7 @@ public class MLDatasetProcessor {
     public SamplePoints getSamplePoints(int tenantId, String userName, long versionsetId)
             throws MLDataProcessingException {
         try {
-            return databaseService.getVersionsetSample(tenantId, userName, versionsetId);
+            return memoryModelHandler.getVersionsetSample(tenantId, userName, versionsetId);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -88,7 +90,7 @@ public class MLDatasetProcessor {
     public MLDatasetVersion getVersionSetWithVersion(int tenantId, String userName, long datasetId, String version)
             throws MLDataProcessingException {
         try {
-            return databaseService.getVersionSetWithVersion(datasetId, version, tenantId, userName);
+            return memoryModelHandler.getVersionSetWithVersion(datasetId, version, tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -98,21 +100,15 @@ public class MLDatasetProcessor {
         try {
 //            MemoryModelHandler handler = new MemoryModelHandler();
 //            handler.getAllDatasets();
-            return databaseService.getAllDatasets(tenantId, userName);
+            return memoryModelHandler.getAllDatasets(tenantId, userName);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
     }
 
-//    public List<MLDataset>loadDatasets(){
-//
-//        MemoryModelHandler handler = new MemoryModelHandler();
-//        return  handler.loadDataset(new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" ));
-//    }
-
     public MLDataset getDataset(int tenantId, String userName, long datasetId) throws MLDataProcessingException {
         try {
-            return databaseService.getDataset(tenantId, userName, datasetId);
+            return memoryModelHandler.getDataset(tenantId, userName, datasetId);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -121,7 +117,7 @@ public class MLDatasetProcessor {
     public List<MLDatasetVersion> getAllVersionsetsOfDataset(int tenantId, String userName, long datasetId)
             throws MLDataProcessingException {
         try {
-            return databaseService.getAllVersionsetsOfDataset(tenantId, userName, datasetId);
+            return memoryModelHandler.getAllVersionsetsOfDataset(tenantId, userName, datasetId);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -129,7 +125,7 @@ public class MLDatasetProcessor {
 
     public List<Object> getScatterPlotPoints(ScatterPlotPoints scatterPlotPoints) throws MLDataProcessingException {
         try {
-            return databaseService.getScatterPlotPoints(scatterPlotPoints);
+            return memoryModelHandler.getScatterPlotPoints(scatterPlotPoints);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -138,7 +134,7 @@ public class MLDatasetProcessor {
     public List<Object> getScatterPlotPointsOfLatestVersion(long datasetId, ScatterPlotPoints scatterPlotPoints)
             throws MLDataProcessingException {
         try {
-            List<MLDatasetVersion> versions = databaseService.getAllVersionsetsOfDataset(
+            List<MLDatasetVersion> versions = memoryModelHandler.getAllVersionsetsOfDataset(
                     scatterPlotPoints.getTenantId(), scatterPlotPoints.getUser(), datasetId);
             // Check whether versions are available for the dataset ID, if not it's not a valid ID
             if (versions.size() == 0) {
@@ -146,7 +142,7 @@ public class MLDatasetProcessor {
             }
             long versionsetId = versions.get(versions.size() - 1).getId();
             scatterPlotPoints.setVersionsetId(versionsetId);
-            return databaseService.getScatterPlotPoints(scatterPlotPoints);
+            return memoryModelHandler.getScatterPlotPoints(scatterPlotPoints);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -155,7 +151,7 @@ public class MLDatasetProcessor {
     public List<Object> getChartSamplePoints(int tenantId, String user, long versionsetId, String featureListString)
             throws MLDataProcessingException {
         try {
-            return databaseService.getChartSamplePoints(tenantId, user, versionsetId, featureListString);
+            return memoryModelHandler.getChartSamplePoints(tenantId, user, versionsetId, featureListString);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -164,13 +160,13 @@ public class MLDatasetProcessor {
     public List<Object> getChartSamplePointsOfLatestVersion(int tenantId, String user, long datasetId,
             String featureListString) throws MLDataProcessingException {
         try {
-            List<MLDatasetVersion> versions = databaseService.getAllVersionsetsOfDataset(tenantId, user, datasetId);
+            List<MLDatasetVersion> versions = memoryModelHandler.getAllVersionsetsOfDataset(tenantId, user, datasetId);
             // Check whether versions are available for the dataset ID, if not it's not a valid ID
             if (versions.size() == 0) {
                 throw new MLDataProcessingException(String.format("%s is not a valid dataset Id", datasetId));
             }
             long versionsetId = versions.get(versions.size() - 1).getId();
-            return databaseService.getChartSamplePoints(tenantId, user, versionsetId, featureListString);
+            return memoryModelHandler.getChartSamplePoints(tenantId, user, versionsetId, featureListString);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -192,6 +188,15 @@ public class MLDatasetProcessor {
         String firstLine = datasetProcessor.getFirstLine();
         CSVFormat dataFormat = DataTypeFactory.getCSVFormat(dataset.getDataType());
         String[] features = MLUtils.getFeatures(firstLine, dataFormat);
+        List<Feature>set = new ArrayList<>();
+        int j =1;
+        for(String name: features){
+            Feature fe = new Feature();
+            fe.setName(name);
+            fe.setIndex(j++);
+            set.add(fe);
+        }
+        dataset.setDefaultFeatures(set);
         int featureSize = features.length;
         // persist dataset
         persistDataset(dataset);
@@ -229,24 +234,23 @@ public class MLDatasetProcessor {
             log.debug("datasetSchemaId: " + datasetSchemaId);
         }
         String versionsetName = dataset.getName() + "-" + dataset.getVersion();
-         createDatasetArtifact(dataset);
-        //setDataset(dataset);
+        createDatasetArtifact(dataset.getId());
+
 
         // build the MLDatasetVersion
         MLDatasetVersion datasetVersion = MLUtils.getMLDatsetVersion(dataset.getTenantId(), datasetSchemaId,
                 dataset.getUserName(), versionsetName, dataset.getVersion(), targetPath);
 
-        //createArtifact(dataset, datasetVersion);
         createVersionArtifact(datasetVersion,dataset.getName());
-        //createDatasetArtifact(dataset);
+
 
 
         long datasetVersionId = retrieveDatasetVersionId(datasetVersion);
-        if (datasetVersionId != -1) {
-            // dataset version is already exist
-            throw new MLDataProcessingException(String.format(
-                    "Dataset already exists; data set [name] %s [version] %s", dataset.getName(), dataset.getVersion()));
-        }
+//        if (datasetVersionId != -1) {
+//            // dataset version is already exist
+//            throw new MLDataProcessingException(String.format(
+//                    "Dataset already exists; data set [name] %s [version] %s", dataset.getName(), dataset.getVersion()));
+//        }
 
         // Persist dataset version
         persistDatasetVersion(datasetVersion);
@@ -268,7 +272,7 @@ public class MLDatasetProcessor {
     private List<String> retreiveFeatureNames(long datasetId) throws MLDataProcessingException {
         List<String> featureNames;
         try {
-            featureNames = databaseService.getFeatureNames(datasetId);
+            featureNames = memoryModelHandler.getFeatureNames(datasetId);
             return featureNames;
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
@@ -286,7 +290,7 @@ public class MLDatasetProcessor {
     private long retrieveDatasetVersionId(MLDatasetVersion versionset) {
         long datasetVersionId;
         try {
-            datasetVersionId = databaseService.getVersionsetId(versionset.getName(), versionset.getTenantId(), versionset.getUserName());
+            datasetVersionId = memoryModelHandler.getVersionsetId(versionset.getName(), versionset.getTenantId(), versionset.getUserName());
             return datasetVersionId;
         } catch (DatabaseHandlerException e) {
             return -1;
@@ -295,6 +299,8 @@ public class MLDatasetProcessor {
 
     private void persistDataset(MLDataset dataset) throws MLDataProcessingException {
         try {
+            MemoryModelHandler model = new MemoryModelHandler();
+            List<MLDataset> datasets = model.addDatasets(dataset);
             String name = dataset.getName();
             int tenantId = dataset.getTenantId();
             String userName = dataset.getUserName();
@@ -311,7 +317,7 @@ public class MLDatasetProcessor {
 
     public void deleteDataset(int tenantId, String userName, long datasetId) throws MLDataProcessingException {
         try {
-            databaseService.deleteDataset(datasetId);
+            memoryModelHandler.deleteDataset(datasetId);
             log.info(String.format("[Deleted] [dataset] %s of [user] %s of [tenant] %s", datasetId, userName, tenantId));
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
@@ -320,7 +326,7 @@ public class MLDatasetProcessor {
 
     public void deleteDatasetVersion(int tenantId, String userName, long versionsetId) throws MLDataProcessingException {
         try {
-            databaseService.deleteDatasetVersion(versionsetId);
+            memoryModelHandler.deleteDatasetVersion(versionsetId);
             log.info(String.format("[Deleted] [dataset version] %s of [user] %s of [tenant] %s", versionsetId,
                     userName, tenantId));
         } catch (DatabaseHandlerException e) {
@@ -330,7 +336,7 @@ public class MLDatasetProcessor {
 
     public List<String> getFeatureNames(long datasetId, String featureType) throws MLDataProcessingException {
         try {
-            return databaseService.getFeatureNames(datasetId, featureType);
+            return memoryModelHandler.getFeatureNames(datasetId, featureType);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
@@ -338,28 +344,21 @@ public class MLDatasetProcessor {
 
     public String getSummaryStats(long datasetId, String featureName) throws MLDataProcessingException {
         try {
-            return databaseService.getSummaryStats(datasetId, featureName);
+            return memoryModelHandler.getSummaryStats(datasetId, featureName);
         } catch (DatabaseHandlerException e) {
             throw new MLDataProcessingException(e.getMessage(), e);
         }
     }
 
-    //Remove this
-    public void setDataset(MLDataset dataset){
-        MemoryModelHandler model = new MemoryModelHandler();
-        List<MLDataset> datasets = model.addDatasets(dataset);
-    }
-
-    public void createDatasetArtifact(MLDataset dataset){
+    public void createDatasetArtifact(long id){
 
         MemoryModelHandler model = new MemoryModelHandler();
-        List<MLDataset> datasets = model.addDatasets(dataset);
         ObjectMapper mapper = new ObjectMapper();
-        MLDataset set = datasets.get(datasets.size()-1);
+        MLDataset set = model.getDataset(id);
         MLDatasetArtifact artifact = model.genArtifact(set);
 
 
-        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName());
+        File dir = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + set.getName());
         if (!dir.exists()) {
             if (dir.mkdir()) {
                 System.out.println("Directory is created!");
@@ -368,12 +367,12 @@ public class MLDatasetProcessor {
             }
         }
         try {
-            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + dataset.getName() + File.separator + "properties.json");
+            File file = new File(System.getProperty("carbon.home") + File.separator + "repository" + File.separator + "deployment" + File.separator + "server" + File.separator + "datasets" + File.separator + set.getName() + File.separator + "properties.json");
             if(!file.exists()) {
                 mapper.writeValue(new File(
                         System.getProperty("carbon.home") + File.separator + "repository" +
                         File.separator + "deployment" + File.separator + "server" + File.separator +
-                        "datasets" + File.separator + dataset.getName()+ File.separator + "properties.json"), artifact);
+                        "datasets" + File.separator +set.getName()+ File.separator + "properties.json"), artifact);
                 String jsonInString = mapper.writeValueAsString(artifact);
                 System.out.println(jsonInString);
 
